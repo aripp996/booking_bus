@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  penumpang
+  admin
+}
+
+enum statustransaksi {
+  menunggu
+  berhasil
+  gagal
+}
+
+enum type_tempat_duduk {
+  premium
+  gold
+  silver
+}
+
+model User {
+  id      String @id @default(cuid())
+  name    String
+  email   String
+  password  String
+  role    Role
+  tikets tiket[]
+  sessions Session[]
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+
+  user      User     @relation(references: [id], fields: [userId], onDelete: Cascade)
+}
+
+model keberangkatan {
+  id      String @id @default(cuid())
+  id_bus  String
+  bus     bus @relation(fields: [id_bus], references: [id])
+  asal_keberangkatan String
+  tujuan_sampai      String
+  waktu_berangkat    DateTime
+  waktu_sampai       DateTime
+  harga              Int
+  kursi kursi_keberangkatan[]
+  tikets tiket[] 
+}
+
+model bus {
+  id      String @id @default(cuid())
+  plat    String
+  nama_bus String
+  kursi String
+  foto String
+  bus keberangkatan[]
+}
+
+model kursi_keberangkatan {
+  id      String @id @default(cuid())
+  id_keberangkatan  String
+  kursi keberangkatan @relation(fields: [id_keberangkatan], references: [id])
+  nomor_kursi   String
+  status_booking Boolean? @default(false)
+  type type_tempat_duduk 
+  tiket tiket?
+}
+
+model tiket {
+  id      String @id @default(cuid())
+  kode    String @unique
+  id_keberangkatan String
+  tikets  keberangkatan @relation(fields: [id_keberangkatan], references: [id])
+  id_penumpang String
+  penumpang User @relation(fields: [id_penumpang], references: [id])
+  id_kursi    String @unique
+  kursi kursi_keberangkatan @relation(fields: [id_kursi], references: [id])
+  waktu_booking DateTime
+  harga         BigInt
+  status statustransaksi
+  tokenMidtrans String? 
+}
